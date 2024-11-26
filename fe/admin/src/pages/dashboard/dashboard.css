@@ -1,0 +1,21 @@
+.dashboard {
+  flex: 4;
+}
+
+.homeWidgets {
+  display: flex;
+  margin: 20px;
+}
+.divide {
+  display: flex;
+  width: 100%;
+}
+.appl {
+  flex: 1;
+}
+.googl {
+  flex: 1;
+}
+.amzn {
+  flex: 1;
+}
