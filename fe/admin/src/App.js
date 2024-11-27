@@ -21,7 +21,7 @@ function App() {
           <div className='container'>
             <Route path='/'>
               {/* <Predict /> */}
-              <DashBoard />
+              {/* <DashBoard /> */}
             </Route>
             <Route path='/analyst'>
               <Analyst />

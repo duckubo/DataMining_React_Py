@@ -304,7 +304,7 @@ export default function DashBoard() {
                     </div>
                     <div className="chart-box">
                         <div className="card-title">
-                            <h4>LSTM MODEL ACCURACY</h4>
+                            <h4>LSTM MODEL ACCURACY AAPL</h4>
                         </div>
                         <LSTMChart ticket={"AAPL"} />
                     </div>
@@ -320,13 +320,18 @@ export default function DashBoard() {
                             <h4>CORRELATION MAP GOOGLE</h4>
                         </div>
                         <Heatmap correlationData={correlationData_googl} features={features} ticker={"GOOG"} />
-
                     </div>
                     <div className="chart-box">
                         <div className="card-title">
                             <h4>ARIMA MODEL ACCURACY GOOGLE</h4>
                         </div>
                         <ArimaChart ticket={"GOOG"} />
+                    </div>
+                    <div className="chart-box">
+                        <div className="card-title">
+                            <h4>LSTM MODEL ACCURACY GOOG</h4>
+                        </div>
+                        <LSTMChart ticket={"GOOG"} />
                     </div>
                 </div>
                 <div className="amzn">
@@ -343,9 +348,15 @@ export default function DashBoard() {
                     </div>
                     <div className="chart-box">
                         <div className="card-title">
-                            <h4>ARIMA MODEL ACCURACY GOOGLE</h4>
+                            <h4>ARIMA MODEL ACCURACY AMZN</h4>
                         </div>
                         <ArimaChart ticket={"AMZN"} />
+                    </div>
+                    <div className="chart-box">
+                        <div className="card-title">
+                            <h4>LSTM MODEL ACCURACY AMZN</h4>
+                        </div>
+                        <LSTMChart ticket={"AMZN"} />
                     </div>
                 </div>
             </div>

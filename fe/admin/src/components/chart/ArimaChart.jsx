@@ -65,7 +65,28 @@ const Trend = ({ ticket }) => {
                     height: 400, // Chiều cao biểu đồ
                 }}
             />
+            <div className="pred_box" style={{ marginBottom: "50px" }}>
+                {[
+                    { bgColor: '#2ecc71', title: `TOMORROW'S ${ticket} CLOSING PRICE BY ARIMA`, value: 220 },
+                    { bgColor: '#3498db', title: "ARIMA RMSE", value: 3 },
+                ].map((card, index) => (
+                    <div key={index} className="col-md-4" style={{ backgroundColor: card.bgColor, textAlign: "right", padding: ' 30px 40px' }}>
+                        <div className="card p-20">
+                            <div className="media widget-ten">
+                                <div className="media-left meida media-middle">
+                                    <span><i className="ti-vector f-s-40"></i></span>
+                                </div>
+                                <div className="media-body media-text-right">
+                                    <h2 className="color-white text-white">{card.value}</h2>
+                                    <p className="m-b-0 text-white">{card.title}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
+
     );
 };
 
