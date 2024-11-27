@@ -14,17 +14,69 @@ df = pd.read_csv('stocks_data.csv')
 
 # Lọc dữ liệu cho mã cổ phiếu 'AAPL'
 df_aapl = df[df['code'] == 'AAPL']
+df_googl = df[df['code'] == 'GOOG']
+df_amzn = df[df['code'] == 'AMZN']
 
 # Xử lý dữ liệu
 df_aapl['datetime'] = pd.to_datetime(df_aapl['datetime'])
 df_aapl["close"] = pd.to_numeric(df_aapl["close"], errors='coerce')
-data = df_aapl[['datetime', 'close']]
 
+df_googl['datetime'] = pd.to_datetime(df_googl['datetime'])
+df_googl["close"] = pd.to_numeric(df_googl["close"], errors='coerce')
+
+df_amzn['datetime'] = pd.to_datetime(df_amzn['datetime'])
+df_amzn["close"] = pd.to_numeric(df_amzn["close"], errors='coerce')
+
+df_aapl.set_index('datetime', inplace=True)  # Đặt datetime làm index
+df_googl.set_index('datetime', inplace=True)  # Đặt datetime làm index
+df_amzn.set_index('datetime', inplace=True)  # Đặt datetime làm index
+    
+weekly_resample_appl = df_aapl.resample('W').mean()
+monthly_resample_appl = df_aapl.resample('M').mean()
+
+weekly_resample_googl = df_googl.resample('W').mean()
+monthly_resample_googl = df_googl.resample('M').mean()
+
+weekly_resample_amzn = df_amzn.resample('W').mean()
+monthly_resample_amzn = df_amzn.resample('M').mean()
+
+# Reset lại index để có thể chuyển đổi thành dict
+df_aapl_day = df_aapl.reset_index()
+df_aapl_week = weekly_resample_appl.reset_index()
+df_aapl_month = weekly_resample_appl.reset_index()
+
+df_googl_day = df_googl.reset_index()
+df_googl_week = weekly_resample_googl.reset_index()
+df_googl_month = monthly_resample_googl.reset_index()
+
+df_amzn_day = df_amzn.reset_index()
+df_amzn_week = weekly_resample_amzn.reset_index()
+df_amzn_month = monthly_resample_amzn.reset_index()
 # Tạo bản sao của tập dữ liệu
-amazon_corr_df = df_aapl.copy()
+apple_corr_df = df_aapl_day.copy()
+apple_corr_df.reset_index(inplace=True)
+
+google_corr_df = df_googl_day.copy()
+google_corr_df.reset_index(inplace=True)
+
+amazon_corr_df = df_amzn_day.copy()
 amazon_corr_df.reset_index(inplace=True)
 
 # Thêm các cột mới
+apple_corr_df['Open-High'] = apple_corr_df['open'] - apple_corr_df['high']
+apple_corr_df['Open-Low'] = apple_corr_df['open'] - apple_corr_df['low']
+apple_corr_df['Close-High'] = apple_corr_df['close'] - apple_corr_df['high']
+apple_corr_df['Close-Low'] = apple_corr_df['close'] - apple_corr_df['low']
+apple_corr_df['High-Low'] = apple_corr_df['high'] - apple_corr_df['low']
+apple_corr_df['Open-Close'] = apple_corr_df['open'] - apple_corr_df['close']
+
+google_corr_df['Open-High'] = google_corr_df['open'] - google_corr_df['high']
+google_corr_df['Open-Low'] = google_corr_df['open'] - google_corr_df['low']
+google_corr_df['Close-High'] = google_corr_df['close'] - google_corr_df['high']
+google_corr_df['Close-Low'] = google_corr_df['close'] - google_corr_df['low']
+google_corr_df['High-Low'] = google_corr_df['high'] - google_corr_df['low']
+google_corr_df['Open-Close'] = google_corr_df['open'] - google_corr_df['close']
+
 amazon_corr_df['Open-High'] = amazon_corr_df['open'] - amazon_corr_df['high']
 amazon_corr_df['Open-Low'] = amazon_corr_df['open'] - amazon_corr_df['low']
 amazon_corr_df['Close-High'] = amazon_corr_df['close'] - amazon_corr_df['high']
@@ -33,62 +85,116 @@ amazon_corr_df['High-Low'] = amazon_corr_df['high'] - amazon_corr_df['low']
 amazon_corr_df['Open-Close'] = amazon_corr_df['open'] - amazon_corr_df['close']
 
 # Tính toán ma trận tương quan
+apple_corr_df2 = apple_corr_df.drop(['index', 'id', 'datetime', 'open', 'high', 'low', 'close', 'code', 'volume'], axis=1)
+apple_corr = apple_corr_df2.corr()
+
+google_corr_df2 = google_corr_df.drop(['index', 'id', 'datetime', 'open', 'high', 'low', 'close', 'code', 'volume'], axis=1)
+google_corr = google_corr_df2.corr()
+
 amazon_corr_df2 = amazon_corr_df.drop(['index', 'id', 'datetime', 'open', 'high', 'low', 'close', 'code', 'volume'], axis=1)
 amazon_corr = amazon_corr_df2.corr()
 
 # Lấy dữ liệu đóng cửa trong 365 ngày
-amazon = df_aapl['close'].head(365)
+apple = df_aapl_day['close'].head(365)
+google = df_googl_day['close'].head(365)
+amazon = df_amzn_day['close'].head(365)
 
 # Tạo đối tượng phân rã cho mô hình nhân
-decomposition = seasonal_decompose(amazon, model='multiplicative', period=12)
-trend = pd.DataFrame(decomposition.trend).dropna()
-seasonal = pd.DataFrame(decomposition.seasonal).dropna()
+decomposition_aapl = seasonal_decompose(apple, model='multiplicative', period=12)
+trend_aapl = pd.DataFrame(decomposition_aapl.trend).dropna()
+seasonal_aapl = pd.DataFrame(decomposition_aapl.seasonal).dropna()
+
+decomposition_googl = seasonal_decompose(google, model='multiplicative', period=12)
+trend_googl = pd.DataFrame(decomposition_googl.trend).dropna()
+seasonal_googl = pd.DataFrame(decomposition_googl.seasonal).dropna()
+
+decomposition_amzn = seasonal_decompose(amazon, model='multiplicative', period=12)
+trend_amzn = pd.DataFrame(decomposition_amzn.trend).dropna()
+seasonal_amzn = pd.DataFrame(decomposition_amzn.seasonal).dropna()
 
 @app.route('/api/stock-data', methods=['GET'])
 def get_stock_data():
     # Chuyển đổi dữ liệu thành định dạng JSON
-    data = df_aapl.to_dict(orient='records')
-    data2 = amazon_corr.to_dict(orient='records')
+    # Đảm bảo df_aapl_day, df_aapl_week, df_aapl_month luôn là DataFrame trước khi chuyển sang dict
+    df_aapl_day_records = df_aapl_day.to_dict(orient='records')
+    df_aapl_week_records = df_aapl_week.to_dict(orient='records')
+    df_aapl_month_records = df_aapl_month.to_dict(orient='records')
+    
+    df_googl_day_records = df_googl_day.to_dict(orient='records')
+    df_googl_week_records = df_googl_week.to_dict(orient='records')
+    df_googl_month_records = df_googl_month.to_dict(orient='records')
+    
+    df_amzn_day_records = df_amzn_day.to_dict(orient='records')
+    df_amzn_week_records = df_amzn_week.to_dict(orient='records')
+    df_amzn_month_records = df_amzn_month.to_dict(orient='records')
+    
+    heatmap_aapl = apple_corr.to_dict(orient='records')
+    heatmap_googl = google_corr.to_dict(orient='records')
+    heatmap_amzn = amazon_corr.to_dict(orient='records')
     
     # Chuyển đổi trend và seasonal thành JSON
-    trend_data = trend.to_dict(orient='records') if not trend.empty else None
-    seasonal_data = seasonal.to_dict(orient='records') if not seasonal.empty else None
+    trend_data_aapl = trend_aapl.to_dict(orient='records') if not trend_aapl.empty else None
+    seasonal_data_aapl = seasonal_aapl.to_dict(orient='records') if not seasonal_aapl.empty else None
+    
+    trend_data_googl = trend_googl.to_dict(orient='records') if not trend_googl.empty else None
+    seasonal_data_googl = seasonal_googl.to_dict(orient='records') if not seasonal_googl.empty else None
+
+    trend_data_amzn = trend_amzn.to_dict(orient='records') if not trend_amzn.empty else None
+    seasonal_data_amzn = seasonal_amzn.to_dict(orient='records') if not seasonal_amzn.empty else None
+
+
 
     # Chuẩn bị dữ liệu gửi đến frontend
     response_data = {
-        'data': data,
-        'data2': data2,
-        'trend': trend_data,
-        'seasonal': seasonal_data
+        'df_aapl_day': df_aapl_day_records,
+        'df_aapl_week': df_aapl_week_records,
+        'df_aapl_month': df_aapl_month_records,
+        'df_googl_day': df_googl_day_records,
+        'df_googl_week': df_googl_week_records,
+        'df_googl_month': df_googl_month_records,
+        'df_amzn_day': df_amzn_day_records,
+        'df_amzn_week': df_amzn_week_records,
+        'df_amzn_month': df_amzn_month_records,
+        'heatmap_aapl': heatmap_aapl,
+        'heatmap_googl': heatmap_googl,
+        'heatmap_amzn': heatmap_amzn,
+        'trend_aapl': trend_data_aapl,
+        'seasonal_aapl': seasonal_data_aapl,
+        'trend_googl': trend_data_googl,
+        'seasonal_googl': seasonal_data_googl,
+        'trend_amzn': trend_data_amzn,
+        'seasonal_amzn': seasonal_data_amzn,
     }
     
     return jsonify(response_data)
 
-@app.route('/api/stock-info', methods=['POST'])
+@app.route('/api/stock-info', methods=['GET'])
 def stock_info():
     # Nhận tham số 'nm' từ yêu cầu
-    data = request.get_json()
-    stock_symbol = data.get('nm')
-    
-    if not stock_symbol:
-        return jsonify({'error': 'Stock symbol (nm) is required.'}), 400
     
     # Đọc dữ liệu từ file CSV
     df = pd.read_csv('stocks_data.csv')
 
     # Lọc dữ liệu cho mã cổ phiếu tương ứng
-    df_symbol = df[df['code'] == stock_symbol]
-
-    # Kiểm tra nếu không có dữ liệu cho cổ phiếu
-    if df_symbol.empty:
-        return jsonify({'error': f'No data found for stock symbol: {stock_symbol}'}), 404
+    df_symbol_aapl = df[df['code'] == 'AAPL']
+    df_symbol_googl = df[df['code'] == 'GOOG']
+    df_symbol_amzn = df[df['code'] == 'AMZN']
 
     # Chuyển đổi cột 'datetime' thành kiểu datetime
-    df_symbol['datetime'] = pd.to_datetime(df_symbol['datetime'])
+    df_symbol_aapl['datetime'] = pd.to_datetime(df_symbol_aapl['datetime'])
+    df_symbol_googl['datetime'] = pd.to_datetime(df_symbol_googl['datetime'])
+    df_symbol_amzn['datetime'] = pd.to_datetime(df_symbol_amzn['datetime'])
 
     # Lấy giá trị mới nhất của cột 'close'
-    newest = df_symbol.tail(1).to_dict(orient='records')[0]  # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
-    return jsonify({'newest': newest})
+    newest_aapl = df_symbol_aapl.tail(1).to_dict(orient='records')[0]  # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
+    newest_googl = df_symbol_googl.tail(1).to_dict(orient='records')[0]  # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
+    newest_amzn = df_symbol_amzn.tail(1).to_dict(orient='records')[0]  # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
+    
+    return jsonify({
+        'newest_aapl': newest_aapl,
+        'newest_googl': newest_googl,
+        'newest_amzn': newest_amzn,
+        })
 
 @app.route('/api/get-forecast', methods=['GET'])
 def get_forecast():

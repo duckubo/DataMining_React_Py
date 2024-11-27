@@ -20,6 +20,7 @@ function App() {
           <Topbar />
           <div className='container'>
             <Route path='/'>
+              {/* <Predict /> */}
               <DashBoard />
             </Route>
             <Route path='/analyst'>

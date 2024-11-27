@@ -1,6 +1,6 @@
 import Plot from 'react-plotly.js';
 
-const TimeSeriesChart1M = ({ data, ticker }) => {
+const TimeSeriesChart1H = ({ data, ticker }) => {
     return (
         <Plot
             data={[
@@ -13,7 +13,7 @@ const TimeSeriesChart1M = ({ data, ticker }) => {
                 }
             ]}
             layout={{
-                title: `Minutes Data Analysis ${ticker}`,
+                title: `Hours Data Analysis ${ticker}`,
                 xaxis: {
                     title: 'Minutes',
                     tickmode: 'auto',   // Tự động phân phối nhãn trục x
@@ -27,4 +27,4 @@ const TimeSeriesChart1M = ({ data, ticker }) => {
     );
 };
 
-export default TimeSeriesChart1M;
+export default TimeSeriesChart1H;

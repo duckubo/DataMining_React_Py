@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-const Trend = ({ticket}) => {
+const Trend = ({ ticket }) => {
     const [actualData, setActualData] = useState([]);
     const [predictedData, setPredictedData] = useState([]);
 
@@ -58,10 +58,10 @@ const Trend = ({ticket}) => {
                     }
                 ]}
                 layout={{
-                    title: 'So sánh Giá trị Thực tế và Dự đoán ARIMA', // Tiêu đề biểu đồ
+                    title: `So sánh Giá trị Thực tế và Dự đoán ARIMA ${ticket}`, // Tiêu đề biểu đồ
                     xaxis: { title: 'Index' }, // Tiêu đề trục x
                     yaxis: { title: 'Giá trị' }, // Tiêu đề trục y
-                    width: 800, // Chiều rộng biểu đồ
+                    width: 500, // Chiều rộng biểu đồ
                     height: 400, // Chiều cao biểu đồ
                 }}
             />

@@ -9,13 +9,26 @@
 .divide {
   display: flex;
   width: 100%;
+  gap: 10px;
 }
 .appl {
   flex: 1;
+  border: 2px solid #3498db; /* Đường viền màu xanh */
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Hiệu ứng nổi */
+  border-radius: 20px; /* Bo góc (tuỳ chọn) */
+  padding: 20px;
 }
 .googl {
   flex: 1;
+  border: 2px solid #3498db; /* Đường viền màu xanh */
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Hiệu ứng nổi */
+  border-radius: 20px; /* Bo góc (tuỳ chọn) */
+  padding: 20px;
 }
 .amzn {
   flex: 1;
+  border: 2px solid #3498db; /* Đường viền màu xanh */
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.5); /* Hiệu ứng nổi */
+  border-radius: 20px; /* Bo góc (tuỳ chọn) */
+  padding: 20px;
 }
