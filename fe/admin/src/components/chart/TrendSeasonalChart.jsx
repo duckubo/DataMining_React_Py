@@ -1,9 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-const TrendSeasonalChart = ({ data, ticker }) => {
-    console.log(data);
+const TrendSeasonalChart = ({ ticket }) => {
+    const [data, setData] = useState({ prices: [], trend: [], seasonal: [] });
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/api/stock-data?ticket=${ticket}`);
+                const stockData = await response.json();
+                formatData(stockData);
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+            }
+        };
+
+        fetchData();
+    }, [ticket]);
+
+    const formatData = (stockData) => {
+        const { df_day, trend, seasonal } = stockData;
+
+        const formattedPrices = df_day.map(item => ({
+            date: new Date(item.datetime).toISOString().split('T')[0],
+            close: item.close
+        })).slice(-365);
+
+
+        const formattedTrend = trend.map((item, index) => ({
+            date: formattedPrices[index]?.date,  // Sử dụng cùng ngày với giá đóng cửa
+            value: item.trend
+        })).slice(-365);
+
+
+        const formattedSeasonal = seasonal.map((item, index) => ({
+            date: formattedPrices[index]?.date,  // Sử dụng cùng ngày với giá đóng cửa
+            value: item.seasonal
+        })).slice(-200);
+
+
+        setData({ prices: formattedPrices, trend: formattedTrend, seasonal: formattedSeasonal });
+    }
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Biểu đồ Giá Đóng Cửa */}
@@ -19,7 +56,7 @@ const TrendSeasonalChart = ({ data, ticker }) => {
                     }
                 ]}
                 layout={{
-                    title: `Giá Đóng Cửa của Cổ Phiếu ${ticker}`,
+                    title: `Giá Đóng Cửa của Cổ Phiếu ${ticket}`,
                     xaxis: { title: 'Ngày' },
                     yaxis: { title: 'Giá Đóng Cửa' },
                     width: 600,
@@ -40,7 +77,7 @@ const TrendSeasonalChart = ({ data, ticker }) => {
                     }
                 ]}
                 layout={{
-                    title: `Xu Hướng của Cổ Phiếu ${ticker}`,
+                    title: `Xu Hướng của Cổ Phiếu ${ticket}`,
                     xaxis: {
                         title: 'Ngày',
                         tickmode: 'auto',   // Tự động phân phối nhãn trục x
@@ -65,7 +102,7 @@ const TrendSeasonalChart = ({ data, ticker }) => {
                     }
                 ]}
                 layout={{
-                    title: `Mùa Vụ của Cổ Phiếu ${ticker}`,
+                    title: `Mùa Vụ của Cổ Phiếu ${ticket}`,
                     xaxis: { title: 'Ngày' },
                     yaxis: { title: 'Giá Mùa Vụ' },
                     width: 600,

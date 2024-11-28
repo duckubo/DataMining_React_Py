@@ -7,7 +7,6 @@ import {
   Route,
 } from 'react-router-dom';
 import Statistics from './pages/statistics/Statistics';
-import Analyst from './pages/analyst/Analyst';
 import Predict from './pages/predict/Predict';
 import DashBoard from './pages/dashboard/DashBoard';
 
@@ -21,10 +20,7 @@ function App() {
           <div className='container'>
             <Route path='/'>
               {/* <Predict /> */}
-              {/* <DashBoard /> */}
-            </Route>
-            <Route path='/analyst'>
-              <Analyst />
+              <DashBoard />
             </Route>
             <Route path='/statistics'>
               <Statistics />

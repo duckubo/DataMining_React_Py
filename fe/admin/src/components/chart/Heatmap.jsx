@@ -7,7 +7,51 @@ import Plot from 'react-plotly.js';
 // Nhãn cho các mã cổ phiếu
 
 
-const Heatmap = ({ correlationData, features, ticker }) => {
+const Heatmap = ({ ticket }) => {
+    const [correlationData, setCorrelationData] = useState([]);
+    const [features, setFeature] = useState([]);
+
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await fetch(`http://localhost:5000/api/stock-data?ticket=${ticket}`);
+                const stockData = await response.json();
+                formatData(stockData);
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+            }
+        };
+        fetchData();
+
+    }, [ticket]);
+
+    const formatData = (stockData) => {
+
+        const { heatmap } = stockData;
+        let formattedData = [];
+
+        // Combine train data into one array with corresponding labels
+        heatmap.forEach((item) => {
+            formattedData.push({
+                'Open-High': item['Open-High'],
+                'Open-Low': item['Open-Low'], // Đảm bảo sử dụng dấu gạch ngang chính xác
+                'Close-High': item['Close-High'], // Sửa tên key cho đúng
+                'Close-Low': item['Close-Low'],
+                'High-Low': item['High-Low'],
+                'Open-Close': item['Open-Close'] // Đảm bảo sử dụng key đúng tên
+            });
+
+        });
+
+        const features = Object.keys(heatmap[0]).filter(key => key);
+        setFeature(features)
+
+        const correlationData = formattedData.map(obj => Object.values(obj));
+        setCorrelationData(correlationData);
+
+    };
+
 
     return (
         <Plot
@@ -24,7 +68,7 @@ const Heatmap = ({ correlationData, features, ticker }) => {
                 },
             ]}
             layout={{
-                title: `Heatmap to visualize the correlation among different <br> Daily price columns for ${ticker} stocks`,
+                title: `Heatmap to visualize the correlation among different <br> Daily price columns for ${ticket} stocks`,
                 xaxis: {
                     title: '',
                 },

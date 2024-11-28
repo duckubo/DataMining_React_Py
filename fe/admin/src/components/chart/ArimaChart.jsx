@@ -1,9 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-const Trend = ({ ticket }) => {
+const ArimaChart = ({ ticket, color1, color2 }) => {
     const [actualData, setActualData] = useState([]);
     const [predictedData, setPredictedData] = useState([]);
+    const [selectedPrediction, setSelectedPrediction] = useState({});
+
+    // Hàm định dạng dữ liệu
+    const formatData = (stockData) => {
+        const actual = stockData.map((point) => ({
+            x: point.date,
+            y: point.actualPrice,
+        }));
+        const predicted = stockData.map((point) => ({
+            x: point.date,
+            y: point.predictedPrice,
+        }));
+        setActualData(actual);
+        setPredictedData(predicted);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -11,7 +26,7 @@ const Trend = ({ ticket }) => {
                 const response = await fetch(`http://localhost:5000/api/get-arima-data?ticket=${ticket}`);
                 const stockData = await response.json();
                 if (stockData) {
-                    formatData(stockData); // Gọi hàm formatData
+                    formatData(stockData); // Gọi hàm formatData để xử lý dữ liệu
                 } else {
                     console.error('Dữ liệu không hợp lệ hoặc không có dữ liệu');
                 }
@@ -20,20 +35,27 @@ const Trend = ({ ticket }) => {
             }
         };
 
+        const fetchPredictions = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/prediction-arima');
+                const pred = await response.json();
+                if (pred) {
+                    const selected = pred.find((p) => p.Code === ticket) || {};
+                    setSelectedPrediction(selected);
+                } else {
+                    console.error('Dữ liệu không hợp lệ hoặc không có dữ liệu');
+                }
+            } catch (error) {
+                console.error('Error fetching predictions:', error);
+            }
+        };
+
         fetchData();
-    }, [ticket]);
-
-    const formatData = (stockData) => {
-        // Giả sử stockData là mảng chứa các đối tượng có `Actual`, `Predicted`
-        const formattedActual = stockData.map(item => item.Actual);
-        const formattedPredicted = stockData.map(item => item.Predicted);
-
-        setActualData(formattedActual);  // Cập nhật dữ liệu thực tế
-        setPredictedData(formattedPredicted);  // Cập nhật dữ liệu dự đoán
-    };
-
+        fetchPredictions();
+    }, [ticket]); // Dependency chỉ cần ticket
     // Chỉ số (index) sẽ được sử dụng làm trục x
     const index = [...Array(actualData.length).keys()]; // Tạo mảng các chỉ số index
+
 
     return (
         <div>
@@ -66,28 +88,45 @@ const Trend = ({ ticket }) => {
                 }}
             />
             <div className="pred_box" style={{ marginBottom: "50px" }}>
-                {[
-                    { bgColor: '#2ecc71', title: `TOMORROW'S ${ticket} CLOSING PRICE BY ARIMA`, value: 220 },
-                    { bgColor: '#3498db', title: "ARIMA RMSE", value: 3 },
-                ].map((card, index) => (
-                    <div key={index} className="col-md-4" style={{ backgroundColor: card.bgColor, textAlign: "right", padding: ' 30px 40px' }}>
-                        <div className="card p-20">
-                            <div className="media widget-ten">
-                                <div className="media-left meida media-middle">
-                                    <span><i className="ti-vector f-s-40"></i></span>
-                                </div>
-                                <div className="media-body media-text-right">
-                                    <h2 className="color-white text-white">{card.value}</h2>
-                                    <p className="m-b-0 text-white">{card.title}</p>
-                                </div>
+
+                <div key={index} className="col-md-4" style={{ backgroundColor: color1, textAlign: "right", padding: ' 30px 40px' }}>
+                    <div className="card p-20">
+                        <div className="media widget-ten">
+                            <div className="media-left meida media-middle">
+                                <span><i className="ti-vector f-s-40"></i></span>
+                            </div>
+                            <div className="media-body media-text-right">
+                                <h2 className="color-white text-white">
+                                    {selectedPrediction && selectedPrediction.Prediction !== undefined
+                                        ? selectedPrediction.Prediction.toFixed(2)
+                                        : ""}
+                                </h2>
+                                <p className="m-b-0 text-white">TOMORROW'S ${ticket} CLOSING PRICE BY ARIMA</p>
                             </div>
                         </div>
                     </div>
-                ))}
+                </div>
+                <div className="col-md-4" style={{ backgroundColor: color2, textAlign: "right", padding: ' 30px 40px' }}>
+                    <div className="card p-20">
+                        <div className="media widget-ten">
+                            <div className="media-left meida media-middle">
+                                <span><i className="ti-vector f-s-40"></i></span>
+                            </div>
+                            <div className="media-body media-text-right">
+                                <h2 className="color-white text-white">
+                                    {selectedPrediction && selectedPrediction.Prediction !== undefined
+                                        ? selectedPrediction.RMSE.toFixed(2)
+                                        : ""}
+                                </h2>
+                                <p className="m-b-0 text-white">ARIMA RMSE</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
     );
 };
 
-export default Trend;
+export default ArimaChart;
