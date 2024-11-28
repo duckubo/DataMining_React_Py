@@ -9,46 +9,63 @@ from sklearn.cluster import KMeans
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
-# Đọc dữ liệu từ file CSV
-df = pd.read_csv('stocks_data.csv')
-
-# Lọc dữ liệu cho mã cổ phiếu 'AAPL'
-df_aapl = df[df['code'] == 'AAPL']
-
-# Xử lý dữ liệu
-df_aapl['datetime'] = pd.to_datetime(df_aapl['datetime'])
-df_aapl["close"] = pd.to_numeric(df_aapl["close"], errors='coerce')
-data = df_aapl[['datetime', 'close']]
-
-# Tạo bản sao của tập dữ liệu
-amazon_corr_df = df_aapl.copy()
-amazon_corr_df.reset_index(inplace=True)
-
-# Thêm các cột mới
-amazon_corr_df['Open-High'] = amazon_corr_df['open'] - amazon_corr_df['high']
-amazon_corr_df['Open-Low'] = amazon_corr_df['open'] - amazon_corr_df['low']
-amazon_corr_df['Close-High'] = amazon_corr_df['close'] - amazon_corr_df['high']
-amazon_corr_df['Close-Low'] = amazon_corr_df['close'] - amazon_corr_df['low']
-amazon_corr_df['High-Low'] = amazon_corr_df['high'] - amazon_corr_df['low']
-amazon_corr_df['Open-Close'] = amazon_corr_df['open'] - amazon_corr_df['close']
-
-# Tính toán ma trận tương quan
-amazon_corr_df2 = amazon_corr_df.drop(['index', 'id', 'datetime', 'open', 'high', 'low', 'close', 'code', 'volume'], axis=1)
-amazon_corr = amazon_corr_df2.corr()
-
-# Lấy dữ liệu đóng cửa trong 365 ngày
-amazon = df_aapl['close'].head(365)
-
-# Tạo đối tượng phân rã cho mô hình nhân
-decomposition = seasonal_decompose(amazon, model='multiplicative', period=12)
-trend = pd.DataFrame(decomposition.trend).dropna()
-seasonal = pd.DataFrame(decomposition.seasonal).dropna()
-
 @app.route('/api/stock-data', methods=['GET'])
 def get_stock_data():
+    
+    ticket = request.args.get('ticket')
+    # Nhận tham số 'nm' từ yêu cầu
+ 
+    if not ticket:
+        return jsonify({'error': 'No stock symbol (ticket) provided'}), 400
+    # Đọc dữ liệu từ file CSV
+    df = pd.read_csv('stocks_data.csv')
+
+    # Lọc dữ liệu cho mã cổ phiếu 'AAPL'
+    df = df[df['code'] == ticket].copy()
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df["close"] = pd.to_numeric(df["close"])
+
+    df.set_index('datetime', inplace=True)  # Đặt datetime làm index
+        
+    weekly_resample = df.resample('W').mean()
+    monthly_resample = df.resample('M').mean()
+
+    # Reset lại index để có thể chuyển đổi thành dict
+    df_day = df.reset_index()
+    df_week = weekly_resample.reset_index()
+    df_month = monthly_resample.reset_index()
+
+    # Tạo bản sao của tập dữ liệu
+    corr_df = df_day.copy()
+    corr_df.reset_index(inplace=True)
+
+    # Thêm các cột mới
+    corr_df['Open-High'] = corr_df['open'] - corr_df['high']
+    corr_df['Open-Low'] = corr_df['open'] - corr_df['low']
+    corr_df['Close-High'] = corr_df['close'] - corr_df['high']
+    corr_df['Close-Low'] = corr_df['close'] - corr_df['low']
+    corr_df['High-Low'] = corr_df['high'] - corr_df['low']
+    corr_df['Open-Close'] = corr_df['open'] - corr_df['close']
+
+    # Tính toán ma trận tương quan
+    corr_df2 = corr_df.drop(['index', 'id', 'datetime', 'open', 'high', 'low', 'close', 'code', 'volume'], axis=1)
+    corr = corr_df2.corr()
+    
+    # Lấy dữ liệu đóng cửa trong 365 ngày
+    data = df_day['close'].head(365)
+    
+    # Tạo đối tượng phân rã cho mô hình nhân
+    decomposition = seasonal_decompose(data, model='multiplicative', period=12)
+    trend = pd.DataFrame(decomposition.trend).dropna()
+    seasonal = pd.DataFrame(decomposition.seasonal).dropna()
+    
     # Chuyển đổi dữ liệu thành định dạng JSON
-    data = df_aapl.to_dict(orient='records')
-    data2 = amazon_corr.to_dict(orient='records')
+    # Đảm bảo df_aapl_day, df_aapl_week, df_aapl_month luôn là DataFrame trước khi chuyển sang dict
+    df_day_records = df_day.to_dict(orient='records')
+    df_week_records = df_week.to_dict(orient='records')
+    df_month_records = df_month.to_dict(orient='records')
+
+    heatmap = corr.to_dict(orient='records')
     
     # Chuyển đổi trend và seasonal thành JSON
     trend_data = trend.to_dict(orient='records') if not trend.empty else None
@@ -56,39 +73,40 @@ def get_stock_data():
 
     # Chuẩn bị dữ liệu gửi đến frontend
     response_data = {
-        'data': data,
-        'data2': data2,
+        'df_day': df_day_records,
+        'df_week': df_week_records,
+        'df_month': df_month_records,
+        'heatmap': heatmap,
         'trend': trend_data,
-        'seasonal': seasonal_data
+        'seasonal': seasonal_data,
     }
     
     return jsonify(response_data)
 
-@app.route('/api/stock-info', methods=['POST'])
+@app.route('/api/stock-info', methods=['GET'])
 def stock_info():
     # Nhận tham số 'nm' từ yêu cầu
-    data = request.get_json()
-    stock_symbol = data.get('nm')
-    
-    if not stock_symbol:
-        return jsonify({'error': 'Stock symbol (nm) is required.'}), 400
+    ticket = request.args.get('ticket')
+    # Nhận tham số 'nm' từ yêu cầu
+ 
+    if not ticket:
+        return jsonify({'error': 'No stock symbol (ticket) provided'}), 400
     
     # Đọc dữ liệu từ file CSV
-    df = pd.read_csv('stocks_data.csv')
+    df = pd.read_csv(f'newest_stock_data.csv')
 
     # Lọc dữ liệu cho mã cổ phiếu tương ứng
-    df_symbol = df[df['code'] == stock_symbol]
-
-    # Kiểm tra nếu không có dữ liệu cho cổ phiếu
-    if df_symbol.empty:
-        return jsonify({'error': f'No data found for stock symbol: {stock_symbol}'}), 404
+    df_symbol = df[df['code'] == ticket].copy()
 
     # Chuyển đổi cột 'datetime' thành kiểu datetime
     df_symbol['datetime'] = pd.to_datetime(df_symbol['datetime'])
 
     # Lấy giá trị mới nhất của cột 'close'
-    newest = df_symbol.tail(1).to_dict(orient='records')[0]  # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
-    return jsonify({'newest': newest})
+    newest = df_symbol.to_dict(orient='records')[0]  # 
+    # Sử dụng .values[0] để lấy giá trị đầu tiên từ Series
+    return jsonify({
+        'newest_data': newest,
+    })
 
 @app.route('/api/get-forecast', methods=['GET'])
 def get_forecast():
@@ -100,7 +118,7 @@ def get_forecast():
     
     try:
         # Đọc dữ liệu từ file CSV
-        df = pd.read_csv('forecast_results.csv')  # Giả sử mỗi mã cổ phiếu có file CSV riêng
+        df = pd.read_csv(f'forecast_results_{ticket}.csv')  # Giả sử mỗi mã cổ phiếu có file CSV riêng
         
         # Chuyển đổi dữ liệu thành JSON
         forecast_results = df.to_dict(orient='records')
@@ -110,24 +128,16 @@ def get_forecast():
     except FileNotFoundError:
         return jsonify({'error': f'Data for {ticket} not found'}), 404
 
-
-@app.route('/api/get-cluster-data', methods=['GET'])
-def get_cluster_data():
-    # Đọc dữ liệu từ file CSV
-    df = pd.read_csv('scatter_data.csv')
-    
-    # Chuyển đổi cột 'index' thành định dạng chuỗi để JSON hóa
-    df['index'] = pd.to_datetime(df['index']).dt.strftime('%Y-%m-%d')
-    
-    # Chuyển đổi dữ liệu thành JSON
-    cluster_data = df.to_dict(orient='records')
-
-    return jsonify(cluster_data)  # Trả về dữ liệu dưới dạng JSON
-
 @app.route('/api/get-cluster-data-trend', methods=['GET'])
 def get_cluster_datatrend():
     # Đọc dữ liệu từ file CSV
-    df = pd.read_csv('scatter_data_trend.csv')
+    ticket = request.args.get('ticket')
+    
+    # Kiểm tra nếu ticket không được cung cấp hoặc không hợp lệ
+    if not ticket:
+        return jsonify({'error': 'No stock symbol (ticket) provided'}), 400
+    
+    df = pd.read_csv(f'scatter_data_trend_{ticket}.csv')
     
     # Chuyển đổi cột 'index' thành định dạng chuỗi để JSON hóa
     df['index'] = pd.to_datetime(df['index']).dt.strftime('%Y-%m-%d')
@@ -137,27 +147,12 @@ def get_cluster_datatrend():
 
     return jsonify(cluster_data)  # Trả về dữ liệu dưới dạng JSON
 
-@app.route('/api/get-season-counts', methods=['GET'])
-def get_season_counts():
-    # Đọc dữ liệu từ file CSV
-    df = pd.read_csv('scatter_data.csv')
-    
-    # Chuyển đổi cột 'index' thành định dạng chuỗi để JSON hóa
-    df['index'] = pd.to_datetime(df['index']).dt.strftime('%Y-%m-%d')
-    df['year'] = pd.to_datetime(df['index']).dt.year  # Đảm bảo cột 'year' được tạo đúng
-    df['season'] = df['season'].map({0: 'Winter', 1: 'Spring', 2: 'Summer', 3: 'Fall'})
-
-    # Tính số ngày trong từng mùa cho mỗi năm
-    season_counts = df.groupby(['year', 'season']).size().unstack(fill_value=0)
-    # Chuyển đổi dữ liệu thành JSON
-    season_counts = season_counts.reset_index()
-    season_counts = season_counts.to_dict(orient='records')
-
-    return jsonify(season_counts)  # Trả về dữ liệu dưới dạng JSON
 @app.route('/api/get-season-counts-trend', methods=['GET'])
 def get_season_counts_trend():
     # Đọc dữ liệu từ file CSV
-    df = pd.read_csv('scatter_data_trend.csv')
+    ticket = request.args.get('ticket')
+    
+    df = pd.read_csv(f'scatter_data_trend_{ticket}.csv') 
     
     # Chuyển đổi cột 'index' thành định dạng chuỗi để JSON hóa
     df['index'] = pd.to_datetime(df['index']).dt.strftime('%Y-%m-%d')
@@ -236,6 +231,69 @@ def get_linear_data():
     arima_data = df.to_dict(orient='records')
 
     return jsonify(arima_data)  # Trả về dữ liệu dưới dạng JSON
+@app.route('/api/monthly-volume', methods=['GET'])
+def get_monthly_volume():
+    try:
+        ticket = request.args.get('ticket')
+        # Đọc dữ liệu từ file CSV
+        df = pd.read_csv(f'yearly_volumes_{ticket}.csv')
+
+
+        monthly_volume = df.to_dict(orient='records')
+
+        return jsonify(monthly_volume)  # Trả về dữ liệu dưới dạng JSON
+    except Exception as e:
+        print("Error in API:", e)
+        return jsonify({"error": str(e)}), 500
+@app.route('/api/tweet-data', methods=['GET'])
+def get_tweet_data():
+    
+    ticket = request.args.get('ticket')
+    try:
+        # Đọc dữ liệu từ CSV
+        df = pd.read_csv(f'processed_tweet_data_{ticket}.csv')
+
+        # Chuyển dữ liệu thành dạng dictionary (json)
+        tweet_data = df.to_dict(orient='records')
+
+        # Trả về dữ liệu dưới dạng JSON
+        return jsonify(tweet_data)
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/prediction-arima', methods=['GET'])
+def prediction_arima():
+    # Đọc tệp CSV
+    df = pd.read_csv('predictions_arima.csv')  # Thay 'path_to_your_file.csv' bằng đường dẫn thực tế đến tệp CSV
+    
+    # Chuyển đổi dữ liệu thành danh sách các từ điển (mỗi dòng là một từ điển)
+    data = df.to_dict(orient='records')
+
+    # Trả về dữ liệu dưới dạng JSON
+    return jsonify(data)
+
+@app.route('/api/prediction-lstm', methods=['GET'])
+def prediction_lstm():
+    # Đọc tệp CSV
+    df = pd.read_csv('predictions_lstm.csv')  # Thay 'path_to_your_file.csv' bằng đường dẫn thực tế đến tệp CSV
+    
+    # Chuyển đổi dữ liệu thành danh sách các từ điển (mỗi dòng là một từ điển)
+    data = df.to_dict(orient='records')
+
+    # Trả về dữ liệu dưới dạng JSON
+    return jsonify(data)
+
+@app.route('/api/prediction-lr', methods=['GET'])
+def prediction_lr():
+    # Đọc tệp CSV
+    df = pd.read_csv('predictions_lr.csv')  # Thay 'path_to_your_file.csv' bằng đường dẫn thực tế đến tệp CSV
+    
+    # Chuyển đổi dữ liệu thành danh sách các từ điển (mỗi dòng là một từ điển)
+    data = df.to_dict(orient='records')
+
+    # Trả về dữ liệu dưới dạng JSON
+    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True)

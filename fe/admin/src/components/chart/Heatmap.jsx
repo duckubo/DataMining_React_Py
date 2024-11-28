@@ -7,31 +7,32 @@ import Plot from 'react-plotly.js';
 // Nhãn cho các mã cổ phiếu
 
 
-const Heatmap = () => {
-    const [correlationData, setData] = useState([]);
+const Heatmap = ({ ticket }) => {
+    const [correlationData, setCorrelationData] = useState([]);
     const [features, setFeature] = useState([]);
+
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/stock-data');
+                const response = await fetch(`http://localhost:5000/api/stock-data?ticket=${ticket}`);
                 const stockData = await response.json();
-                const formattedData = formatData(stockData);
-                const correlationData = formattedData.map(obj => Object.values(obj));
-                setData(correlationData);
+                formatData(stockData);
             } catch (error) {
                 console.error('Error fetching stock data:', error);
             }
         };
-
         fetchData();
-    }, []);
+
+    }, [ticket]);
 
     const formatData = (stockData) => {
-        const { data2 } = stockData;
+
+        const { heatmap } = stockData;
         let formattedData = [];
 
         // Combine train data into one array with corresponding labels
-        data2.forEach((item) => {
+        heatmap.forEach((item) => {
             formattedData.push({
                 'Open-High': item['Open-High'],
                 'Open-Low': item['Open-Low'], // Đảm bảo sử dụng dấu gạch ngang chính xác
@@ -42,13 +43,16 @@ const Heatmap = () => {
             });
 
         });
-        const features = Object.keys(data2[0]).filter(key => key);
-        setFeature(features)
-        console.log(formattedData);
 
-        // Giới hạn 30 phần tử cuối cùng
-        return formattedData
+        const features = Object.keys(heatmap[0]).filter(key => key);
+        setFeature(features)
+
+        const correlationData = formattedData.map(obj => Object.values(obj));
+        setCorrelationData(correlationData);
+
     };
+
+
     return (
         <Plot
             data={[
@@ -64,15 +68,15 @@ const Heatmap = () => {
                 },
             ]}
             layout={{
-                title: 'Heatmap to visualize the correlation among different Daily price columns for AAPL stocks',
+                title: `Heatmap to visualize the correlation among different <br> Daily price columns for ${ticket} stocks`,
                 xaxis: {
                     title: '',
                 },
                 yaxis: {
                     title: '',
                 },
-                width: 800,
-                height: 600,
+                width: 500,
+                height: 400,
             }}
         />
     );

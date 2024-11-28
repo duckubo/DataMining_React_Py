@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import TweetData from './TweetData';
-const TweetBox = ({ quote }) => {
-    
+const TweetBox = ({ ticket }) => {
+
     return (
-        <div className="col-lg-12" style={{paddingBottom: '50px',marginLeft: '100px'}}>
+        <div className="col-lg-12" style={{ paddingBottom: '50px' }}>
             <div className="card">
                 <div className="card-title">
-                    <h4>RECENT TWEETS AND NEWS ABOUT {quote}</h4>
+                    <h4>RECENT TWEETS AND NEWS ABOUT {ticket}</h4>
                 </div>
                 <div className="card-body">
                     <div className="table-responsive">
@@ -26,7 +26,7 @@ const TweetBox = ({ quote }) => {
                                         <div className="round-img">
                                             <a href="https://twitter.com/">
                                                 <img
-                                                    style={{ padding: '0px', width: '300px', height: '300px' }}
+                                                    style={{ padding: '0px', width: '50px', height: '50px' }}
                                                     src={`https://static.vecteezy.com/system/resources/previews/042/148/642/non_2x/new-twitter-x-logo-twitter-icon-x-social-media-icon-free-png.png`}
                                                     alt=""
                                                 />
@@ -34,7 +34,7 @@ const TweetBox = ({ quote }) => {
                                         </div>
                                     </td>
                                     <td>
-                                        <TweetData />
+                                        <TweetData ticket={ticket} />
                                     </td>
                                     <td><span></span></td>
                                     <td><span></span></td>

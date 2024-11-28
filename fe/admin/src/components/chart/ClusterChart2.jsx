@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Plot from 'react-plotly.js';
 
-const ClusterChart = () => {
+const ClusterChart = ({ ticket }) => {
     const [clusterData, setClusterData] = useState([]);
+    const [plotData_Slice, setPlotData] = useState([]);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/get-cluster-data-trend')
+        axios.get(`http://localhost:5000/api/get-cluster-data-trend?ticket=${ticket}`)
             .then(response => {
                 setClusterData(response.data);
             })
-            .catch(error => {   
+            .catch(error => {
                 console.error('Có lỗi khi lấy dữ liệu:', error);
             });
     }, []);
@@ -24,11 +25,11 @@ const ClusterChart = () => {
 
     // Duyệt qua dữ liệu để nhóm theo từng cụm và chỉ thêm tên vào legend khi chưa có
     clusterData.forEach(item => {
-        const seasonName = item.season === 0 ? 'Low Volume' : 
+        const seasonName = item.season === 0 ? 'Low Volume' :
             item.season === 1 ? 'High Volume' :
                 item.season === 2 ? 'Average Volume' :
                     item.season === 3 ? 'Spike Volume' :
-                        item.season === 4 ? 'Ultra-High Volume' :'Very Low Volume';
+                        item.season === 4 ? 'Ultra-High Volume' : 'Very Low Volume';
         // Nếu tên mùa chưa có trong legend thì thêm vào
         if (!seasonNames.has(seasonName)) {
             seasonNames.add(seasonName);
@@ -40,12 +41,12 @@ const ClusterChart = () => {
                 marker: { color: colors[item.season], size: 12 },
                 name: seasonName,  // Hiển thị tên cụm
             });
+
         }
     });
-
     return (
         <div>
-            <h2>Biểu đồ phân cụm theo khối lượng giao dịch</h2>
+            <h3>Biểu đồ phân cụm theo khối lượng giao dịch</h3>
             <Plot
                 data={plotData}
                 layout={{
@@ -56,8 +57,8 @@ const ClusterChart = () => {
                     },
                     yaxis: { title: 'Volume' },
                     showlegend: true,  // Hiển thị legend
-                    width: 1200,  // Chiều rộng biểu đồ
-                    height: 600, // Chiều cao biểu đồ
+                    width: 600,  // Chiều rộng biểu đồ
+                    height: 400, // Chiều cao biểu đồ
                 }}
             />
         </div>
