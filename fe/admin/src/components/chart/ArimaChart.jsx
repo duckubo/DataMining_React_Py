@@ -8,16 +8,11 @@ const ArimaChart = ({ ticket, color1, color2 }) => {
 
     // Hàm định dạng dữ liệu
     const formatData = (stockData) => {
-        const actual = stockData.map((point) => ({
-            x: point.date,
-            y: point.actualPrice,
-        }));
-        const predicted = stockData.map((point) => ({
-            x: point.date,
-            y: point.predictedPrice,
-        }));
-        setActualData(actual);
-        setPredictedData(predicted);
+        const formattedActual = stockData.map(item => item.Actual);
+        const formattedPredicted = stockData.map(item => item.Predicted);
+
+        setActualData(formattedActual);  // Cập nhật dữ liệu thực tế
+        setPredictedData(formattedPredicted);  // Cập nhật dữ liệu dự đoán
     };
 
     useEffect(() => {

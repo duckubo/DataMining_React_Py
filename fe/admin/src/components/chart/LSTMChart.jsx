@@ -6,14 +6,7 @@ const Trend = ({ ticket, color1, color2 }) => {
     const [predictedData, setPredictedData] = useState([]);
     const [selectedPrediction, setSelectedPrediction] = useState({});
 
-    const formatData = (stockData) => {
-        // Giả sử stockData là mảng chứa các đối tượng có `Actual`, `Predicted`
-        const formattedActual = stockData.map(item => item.Actual);
-        const formattedPredicted = stockData.map(item => item.Predicted);
 
-        setActualData(formattedActual);  // Cập nhật dữ liệu thực tế
-        setPredictedData(formattedPredicted);  // Cập nhật dữ liệu dự đoán
-    };
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -48,7 +41,14 @@ const Trend = ({ ticket, color1, color2 }) => {
         fetchPredictions();
     }, [ticket]);
 
+    const formatData = (stockData) => {
+        // Giả sử stockData là mảng chứa các đối tượng có `Actual`, `Predicted`
+        const formattedActual = stockData.map(item => item.Actual);
+        const formattedPredicted = stockData.map(item => item.Predicted);
 
+        setActualData(formattedActual);  // Cập nhật dữ liệu thực tế
+        setPredictedData(formattedPredicted);  // Cập nhật dữ liệu dự đoán
+    };
 
 
     // Chỉ số (index) sẽ được sử dụng làm trục x
